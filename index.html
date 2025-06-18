@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xodimlar Kirish Vaqtini Ro'yxatga Olish</title>
+   <style>
+    /* RESET & BASE */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Orbitron', 'Inter', sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    color: #ffffff;
+    transition: background 0.5s ease;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+body.dark-mode {
+    background: linear-gradient(135deg, #000000, #1a1a1a);
+}
+
+.container {
+    max-width: 1200px;
+    margin: auto;
+    padding: 40px 20px;
+    backdrop-filter: blur(10px);
+    background-color: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    box-shadow: 0 0 30px rgba(0, 255, 255, 0.1);
+}
+
+h1 {
+    text-align: center;
+    font-size: 2.5rem;
+    color: #00f0ff;
+    margin-bottom: 40px;
+    text-shadow: 0 0 10px #00f0ff;
+    animation: flicker 3s infinite;
+}
+
+@keyframes flicker {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.scanner-section, .admin-section, .qr-codes-section, .attendance-section {
+    background: rgba(0, 255, 255, 0.05);
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    border-radius: 16px;
+    margin-bottom: 30px;
+    padding: 30px;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+    animation: fadeInUp 0.8s ease both;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#qr-reader {
+    width: 100%;
+    border: 2px solid #00f0ff;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+    animation: pulse-glow 2s infinite;
+}
+
+@keyframes pulse-glow {
+    0% {
+        box-shadow: 0 0 5px #00f0ff;
+    }
+    50% {
+        box-shadow: 0 0 20px #00f0ff;
+    }
+    100% {
+        box-shadow: 0 0 5px #00f0ff;
+    }
+}
+
+#qr-reader-results {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(0, 255, 255, 0.1);
+    border-radius: 8px;
+    text-align: center;
+}
+
+.success {
+    background: rgba(0, 255, 127, 0.15);
+    color: #00ff90;
+}
+
+.error {
+    background: rgba(255, 0, 0, 0.1);
+    color: #ff3b3b;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+th, td {
+    padding: 16px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+th {
+    background: #0f0c29;
+    color: #00f0ff;
+    text-transform: uppercase;
+}
+
+tr:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+input, .action-button, #manual-id-input {
+    padding: 14px;
+    margin: 10px 0;
+    border-radius: 8px;
+    border: none;
+    background: rgba(0, 0, 0, 0.2);
+    color: #fff;
+    width: 100%;
+    transition: 0.3s;
+}
+
+input:focus, #manual-id-input:focus {
+    background: rgba(255, 255, 255, 0.1);
+    outline: none;
+}
+
+.action-button {
+    background: #00f0ff;
+    color: #000;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+.action-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(0, 255, 255, 0.4);
+}
+
+.qr-codes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 20px;
+}
+
+.qr-code-item {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 12px;
+    text-align: center;
+    transition: transform 0.3s ease;
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+}
+
+.qr-code-item:hover {
+    transform: scale(1.05);
+}
+
+.loader {
+    display: none;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #00f0ff;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    margin: 10px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #00f0ff;
+    border: 1px solid #00f0ff;
+    border-radius: 8px;
+    animation: slideUp 0.3s ease, fadeOut 4s ease 2s forwards;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(40px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fadeOut {
+    to { opacity: 0; }
+}
+
+#theme-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #00f0ff;
+    color: #000;
+    padding: 12px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 10px #00f0ff;
+    transition: background 0.3s;
+}
+
+#theme-toggle:hover {
+    background: #0ff;
+}
+
+@media (max-width: 600px) {
+    .container {
+        padding: 20px 10px;
+    }
+    .qr-codes-grid {
+        grid-template-columns: 1fr;
+    }
+    h1 {
+        font-size: 24px;
+    }
+    input, .action-button {
+        width: 100%;
+    }
+}
+
+   </style>
+</head>
+<body>
+    <div id="theme-toggle" onclick="toggleTheme()">🌙</div>
+    <div class="container">
+        <h1>Xodimlar Kirish Vaqtini Ro'yxatga Olish</h1>
+
+        <!-- Skanerlash Bo'limi -->
+        <div class="scanner-section">
+            <h2>QR Kodni Skanerlang yoki ID Kiriting</h2>
+            <div id="qr-reader" style="width: 400px;"></div>
+            <input type="text" id="manual-id-input" placeholder="ID ni qo'lda kiriting">
+            <button class="action-button" onclick="manualCheckIn()">Qo'lda Kirish</button>
+            <div id="qr-reader-results"></div>
+            <div class="loader" id="loader"></div>
+            <div class="attendance-section">
+                <h3>Kirish Vaqtlari</h3>
+                <div class="filter-section">
+                    <input type="text" id="filter-input" placeholder="Ism bo'yicha qidirish">
+                    <button class="action-button" onclick="exportToCSV()">CSV ga Eksport</button>
+                </div>
+                <table id="attendance-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Ism</th>
+                            <th>Kirish Vaqti</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendance-list"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Admin Bo'limi -->
+        <div class="admin-section" id="admin-section">
+            <div id="login-form" class="login-form">
+                <h2>Admin Kirish</h2>
+                <input type="password" id="admin-password" placeholder="Parolni kiriting">
+                <button class="action-button" onclick="checkAdminPassword()">Kirish</button>
+            </div>
+            <div id="qr-codes-section" class="qr-codes-section" style="display: none;">
+                <h2>Xodimlar QR Kodlari</h2>
+                <button class="action-button" id="download-all-qr">Barcha QR Kodlarni ZIP sifatida Yuklab Olish</button>
+                <button class="action-button" onclick="logoutAdmin()">Chiqish</button>
+                <div class="qr-codes-grid" id="qr-codes-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kutubxonalar -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <script>
+        // Xodimlar ro'yxati
+        const employees = [
+            { id: "001", name: "Ali Xodim" },
+            { id: "002", name: "Vali Saidov" },
+            { id: "003", name: "Nodira Axmedova" },
+            { id: "004", name: "Shaxzod Raximov" },
+            { id: "005", name: "Gulnoza Karimova" },
+            { id: "006", name: "Bekzod Tursunov" },
+            { id: "007", name: "Dildora Yuldasheva" },
+            { id: "008", name: "Jamshid Ergashev" },
+            { id: "009", name: "Malika Sobirova" },
+            { id: "010", name: "Otabek Murodov" }
+        ];
+
+        // Admin paroli
+        const ADMIN_PASSWORD = 'sodiq19';
+
+        // Toast xabarlar
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        }
+
+        // QR kod skanerlash
+        function startQRScanner() {
+            const html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 200 }, false);
+            const resultDiv = document.getElementById('qr-reader-results');
+            
+            html5QrcodeScanner.render(
+                (decodedText) => {
+                    processCheckIn(decodedText);
+                },
+                (error) => {
+                    console.warn(`QR skanerlash xatosi: ${error}`);
+                    resultDiv.textContent = 'QR kodni skanerlashda xato. Iltimos, qayta urinib ko‘ring.';
+                    resultDiv.className = 'error';
+                }
+            ).catch(error => {
+                console.error('Skaner ishga tushmadi:', error);
+                resultDiv.textContent = 'Kamera ruxsati berilmagan yoki skaner ishga tushmadi. Iltimos, ruxsatlarni tekshiring.';
+                resultDiv.className = 'error';
+            });
+        }
+
+        // Qo‘lda kirish
+        function manualCheckIn() {
+            const manualId = document.getElementById('manual-id-input').value.trim();
+            if (manualId) {
+                processCheckIn(manualId);
+                document.getElementById('manual-id-input').value = '';
+            } else {
+                showToast('Iltimos, ID kiriting.', 'error');
+            }
+        }
+
+        // Kirishni qayta ishlash
+        function processCheckIn(id) {
+            const employee = employees.find(emp => emp.id === id);
+            const resultDiv = document.getElementById('qr-reader-results');
+            if (employee) {
+                const now = new Date();
+                const time = now.toLocaleString('uz-UZ', { hour12: false });
+
+                let attendanceRecords = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
+                const existingRecord = attendanceRecords.find(record => 
+                    record.id === employee.id && 
+                    record.time.startsWith(now.toLocaleDateString('uz-UZ'))
+                );
+                
+                if (existingRecord) {
+                    existingRecord.time = time;
+                    showToast(`ID: ${employee.id} (${employee.name}) yangilandi.`, 'success');
+                } else {
+                    attendanceRecords.push({
+                        id: employee.id,
+                        name: employee.name,
+                        time: time
+                    });
+                    showToast(`ID: ${employee.id} (${employee.name}) ro‘yxatga olindi.`, 'success');
+                }
+
+                localStorage.setItem('attendanceRecords', JSON.stringify(attendanceRecords));
+                resultDiv.textContent = `ID: ${employee.id} (${employee.name}) kirish vaqti: ${time}`;
+                resultDiv.className = 'success';
+                updateAttendanceList();
+            } else {
+                resultDiv.textContent = 'Noma‘lum ID yoki QR kod. Iltimos, to‘g‘ri ma‘lumot kiriting.';
+                resultDiv.className = 'error';
+                showToast('Noto‘g‘ri ID yoki QR kod.', 'error');
+            }
+        }
+
+        // Kelganlar ro'yxatini yangilash
+        function updateAttendanceList(filterQuery = '') {
+            const attendanceList = document.getElementById('attendance-list');
+            attendanceList.innerHTML = '';
+
+            const attendanceRecords = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
+            const filteredRecords = attendanceRecords.filter(record => 
+                record.name.toLowerCase().includes(filterQuery.toLowerCase())
+            );
+            
+            filteredRecords.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+            filteredRecords.forEach(record => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${record.id}</td>
+                    <td>${record.name}</td>
+                    <td>${record.time}</td>
+                `;
+                attendanceList.appendChild(row);
+            });
+        }
+
+        // QR kodlarni generatsiya qilish
+        function generateQRCodes() {
+            const qrCodesGrid = document.getElementById('qr-codes-grid');
+            qrCodesGrid.innerHTML = '';
+
+            employees.forEach(employee => {
+                const qrCodeItem = document.createElement('div');
+                qrCodeItem.classList.add('qr-code-item');
+
+                const qrCodeDiv = document.createElement('div');
+                new QRCode(qrCodeDiv, {
+                    text: employee.id,
+                    width: 120,
+                    height: 120
+                });
+
+                const qrCodeInfo = document.createElement('p');
+                qrCodeInfo.textContent = `ID: ${employee.id} (${employee.name})`;
+
+                qrCodeItem.appendChild(qrCodeDiv);
+                qrCodeItem.appendChild(qrCodeInfo);
+                qrCodesGrid.appendChild(qrCodeItem);
+            });
+        }
+
+        // Barcha QR kodlarni ZIP sifatida yuklab olish
+        function downloadAllQRCodes() {
+            const loader = document.getElementById('loader');
+            loader.style.display = 'block';
+
+            const zip = new JSZip();
+            const qrPromises = employees.map(employee => {
+                const qrCodeDiv = document.createElement('div');
+                return new Promise((resolve, reject) => {
+                    new QRCode(qrCodeDiv, {
+                        text: employee.id,
+                        width: 200,
+                        height: 200,
+                        callback: () => {
+                            const canvas = qrCodeDiv.querySelector('canvas');
+                            if (canvas) {
+                                canvas.toBlob(blob => {
+                                    zip.file(`QRCode_${employee.id}_${employee.name}.png`, blob);
+                                    resolve();
+                                });
+                            } else {
+                                reject(new Error(`QR kod ${employee.id} uchun yaratilmadi`));
+                            }
+                        }
+                    });
+                });
+            });
+
+            Promise.all(qrPromises)
+                .then(() => {
+                    zip.generateAsync({ type: 'blob' }).then(content => {
+                        saveAs(content, 'Employee_QR_Codes.zip');
+                        loader.style.display = 'none';
+                        showToast('QR kodlar ZIP sifatida yuklandi.', 'success');
+                    });
+                })
+                .catch(error => {
+                    console.error('ZIP fayl yaratishda xatolik:', error);
+                    loader.style.display = 'none';
+                    showToast('QR kodlarni yuklashda xato yuz berdi.', 'error');
+                });
+        }
+
+        // CSV ga eksport qilish
+        function exportToCSV() {
+            const attendanceRecords = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
+            if (attendanceRecords.length === 0) {
+                showToast('Eksport qilish uchun ma‘lumotlar yo‘q.', 'error');
+                return;
+            }
+
+            const csvContent = [
+                'ID,Ism,Kirish Vaqti',
+                ...attendanceRecords.map(record => 
+                    `"${record.id}","${record.name}","${record.time}"`
+                )
+            ].join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            saveAs(blob, 'attendance_records.csv');
+            showToast('Ma‘lumotlar CSV sifatida yuklandi.', 'success');
+        }
+
+        // Telegram guruhiga ma'lumotlarni yuborish
+        async function sendToTelegram() {
+            const botToken = 'YOUR_BOT_TOKEN'; // O‘z tokeningizni qo‘ying
+            const chatId = 'YOUR_CHAT_ID'; // O‘z chat ID ni qo‘ying
+            const attendanceRecords = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
+
+            if (attendanceRecords.length === 0) return;
+
+            let message = 'Xodimlar Kirish Vaqtlari:\n\n';
+            attendanceRecords.forEach(record => {
+                message += `ID: ${record.id}, Ism: ${record.name}, Vaqt: ${record.time}\n`;
+            });
+
+            try {
+                const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: chatId, text: message })
+                });
+
+                const result = await response.json();
+                if (result.ok) {
+                    showToast('Ma‘lumotlar Telegramga yuborildi.', 'success');
+                } else {
+                    showToast('Telegramga yuborishda xato.', 'error');
+                }
+            } catch (error) {
+                console.error('Telegram API xatosi:', error);
+                showToast('Telegramga ulanishda xato.', 'error');
+            }
+        }
+
+        // Admin parolini tekshirish
+        function checkAdminPassword() {
+            const passwordInput = document.getElementById('admin-password').value;
+            const loginForm = document.getElementById('login-form');
+            const qrCodesSection = document.getElementById('qr-codes-section');
+
+            if (passwordInput === ADMIN_PASSWORD) {
+                loginForm.style.display = 'none';
+                qrCodesSection.style.display = 'block';
+                generateQRCodes();
+                showToast('Admin paneliga kirdingiz.', 'success');
+            } else {
+                showToast('Noto‘g‘ri parol.', 'error');
+                document.getElementById('admin-password').value = '';
+            }
+        }
+
+        // Admin chiqish
+        function logoutAdmin() {
+            const loginForm = document.getElementById('login-form');
+            const qrCodesSection = document.getElementById('qr-codes-section');
+            loginForm.style.display = 'block';
+            qrCodesSection.style.display = 'none';
+            document.getElementById('admin-password').value = '';
+            showToast('Admin panelidan chiqildi.', 'success');
+        }
+
+        // Qidiruv funksiyasi
+        function setupFilter() {
+            const filterInput = document.getElementById('filter-input');
+            filterInput.addEventListener('input', () => {
+                updateAttendanceList(filterInput.value);
+            });
+        }
+
+        // Tungi rejim
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            const themeToggle = document.getElementById('theme-toggle');
+            themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+        }
+
+        // Sahifa yuklanganda
+        document.addEventListener('DOMContentLoaded', () => {
+            startQRScanner();
+            updateAttendanceList();
+            setupFilter();
+            sendToTelegram();
+            setInterval(sendToTelegram, 5 * 60 * 1000);
+            document.getElementById('download-all-qr').addEventListener('click', downloadAllQRCodes);
+        });
+    </script>
+</body>
+</html>
