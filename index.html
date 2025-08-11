@@ -1,289 +1,905 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uz">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shaxsiy Face ID Tizimi</title>
+    <title>Xodimlar Kirish Vaqtini Ro'yxatga Olish</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Orbitron', 'Inter', -apple-system, sans-serif;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            text-align: center;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            transition: background 0.5s ease;
         }
-        
+
+        body.dark-mode {
+            background: linear-gradient(135deg, #000000, #1a1a1a);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 40px 20px;
+            backdrop-filter: blur(12px);
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.2);
+            transition: box-shadow 0.3s ease;
+        }
+
         h1 {
-            color: #333;
+            text-align: center;
+            font-size: 2.5rem;
+            color: #00f0ff;
+            margin-bottom: 40px;
+            text-shadow: 0 0 10px #00f0ff, 0 0 20px #00f0ff;
+            animation: flicker 3s infinite;
+            will-change: opacity;
         }
-        
-        #camera-container {
+
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.85; }
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: #00f0ff;
+            margin-bottom: 20px;
+            text-shadow: 0 0 5px rgba(0, 240, 255, 0.5);
+        }
+
+        .scanner-section, .admin-section, .qr-codes-section, .attendance-section, .employee-management {
+            background: rgba(0, 255, 255, 0.06);
+            border: 1px solid rgba(0, 255, 255, 0.25);
+            border-radius: 16px;
+            margin-bottom: 30px;
+            padding: 30px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.15);
+            animation: fadeInUp 0.8s ease both;
+            will-change: transform, opacity;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        #qr-reader {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            border: 3px solid #00f0ff;
+            border-radius: 12px;
             position: relative;
-            width: 640px;
-            height: 480px;
-            margin: 20px auto;
-            border: 3px solid #ddd;
-            border-radius: 5px;
+            overflow: hidden;
+            animation: pulse-glow 2s infinite;
+            will-change: box-shadow;
+        }
+
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 5px #00f0ff, 0 0 10px #00f0ff; }
+            50% { box-shadow: 0 0 20px #00f0ff, 0 0 30px #00f0ff; }
+            100% { box-shadow: 0 0 5px #00f0ff, 0 0 10px #00f0ff; }
+        }
+
+        #qr-reader-results {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 255, 255, 0.12);
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1rem;
+            transition: background 0.3s ease;
+        }
+
+        .success {
+            background: rgba(0, 255, 127, 0.2);
+            color: #00ff90;
+            border: 1px solid rgba(0, 255, 127, 0.4);
+        }
+
+        .error {
+            background: rgba(255, 0, 0, 0.2);
+            color: #ff3b3b;
+            border: 1px solid rgba(255, 0, 0, 0.4);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
             overflow: hidden;
         }
-        
-        #video {
-            width: 100%;
-            height: 100%;
-            background-color: #f0f0f0;
-        }
-        
-        #canvas {
-            display: none;
-        }
-        
-        button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin: 10px 5px;
-            cursor: pointer;
-            border-radius: 5px;
-            transition: background-color 0.3s;
-        }
-        
-        button:hover {
-            background-color: #45a049;
-        }
-        
-        #results {
-            margin-top: 30px;
+
+        th, td {
+            padding: 16px;
             text-align: left;
-            border-top: 1px solid #ddd;
-            padding-top: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }
-        
-        .record {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-            margin-bottom: 5px;
+
+        th {
+            background: #0f0c29;
+            color: #00f0ff;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
         }
-        
-        .timestamp {
-            color: #666;
-            font-size: 0.9em;
+
+        tr:nth-child(even) {
+            background: rgba(0, 255, 255, 0.03);
         }
-        
-        #face-message {
+
+        tr:hover {
+            background: rgba(0, 255, 255, 0.08);
+        }
+
+        .login-form, .filter-section, .employee-management-form {
+            text-align: center;
+        }
+
+        input, .action-button, #manual-id-input {
+            padding: 14px;
             margin: 10px 0;
-            font-weight: bold;
-            min-height: 20px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.4);
+            color: #fff;
+            width: 100%;
+            max-width: 300px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
         }
-        
-        .success {
-            color: green;
+
+        input:focus, #manual-id-input:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #00f0ff;
+            outline: none;
+            transform: scale(1.03);
+            box-shadow: 0 0 8px rgba(0, 255, 255, 0.3);
         }
-        
-        .error {
-            color: red;
+
+        .action-button {
+            background: linear-gradient(45deg, #00f0ff, #00b7eb);
+            color: #000;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
-        
-        #setup-section, #verification-section {
-            margin: 20px 0;
+
+        .action-button:hover {
+            background: linear-gradient(45deg, #0ff, #00d4ff);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 255, 255, 0.5);
+        }
+
+        .action-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(0, 255, 255, 0.3);
+        }
+
+        body.dark-mode .action-button {
+            background: linear-gradient(45deg, #007bff, #00b7eb);
+        }
+
+        body.dark-mode .action-button:hover {
+            background: linear-gradient(45deg, #0056b3, #00d4ff);
+        }
+
+        .qr-codes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 20px;
+        }
+
+        .qr-code-item {
+            background: rgba(0, 0, 0, 0.35);
             padding: 15px;
-            border: 1px solid #eee;
-            border-radius: 5px;
+            border-radius: 12px;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.25);
+            animation: fadeIn 0.5s ease;
+        }
+
+        .qr-code-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+        }
+
+        .qr-code-item canvas {
+            max-width: 100%;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .qr-code-item p {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #00f0ff;
+            text-shadow: 0 0 3px rgba(0, 240, 255, 0.5);
+        }
+
+        .download-btn {
+            margin-top: 10px;
+            padding: 8px;
+            font-size: 0.85rem;
+            max-width: 120px;
+            background: linear-gradient(45deg, #4CAF50, #2E7D32);
+        }
+
+        .download-btn:hover {
+            background: linear-gradient(45deg, #66BB6A, #388E3C);
+        }
+
+        .delete-btn {
+            margin-top: 10px;
+            padding: 8px;
+            font-size: 0.85rem;
+            max-width: 120px;
+            background: linear-gradient(45deg, #f44336, #d32f2f);
+        }
+
+        .delete-btn:hover {
+            background: linear-gradient(45deg, #ef5350, #e53935);
+        }
+
+        .loader {
+            display: none;
+            border: 4px solid rgba(255, 255, 255, 0.25);
+            border-top: 4px solid #00f0ff;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 10px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            background: rgba(0, 0, 0, 0.85);
+            color: #00f0ff;
+            border: 1px solid #00f0ff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.35);
+            animation: slideUp 0.3s ease, fadeOut 4s ease 2s forwards;
+            z-index: 1000;
+            font-size: 0.95rem;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(40px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            to { opacity: 0; }
+        }
+
+        #theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(45deg, #00f0ff, #00b7eb);
+            color: #000;
+            padding: 12px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px #00f0ff;
+            transition: all 0.3s ease;
+        }
+
+        #theme-toggle:hover {
+            background: linear-gradient(45deg, #0ff, #00d4ff);
+            transform: rotate(360deg);
+            box-shadow: 0 0 15px #0ff;
+        }
+
+        body.dark-mode #theme-toggle {
+            background: linear-gradient(45deg, #007bff, #00b7eb);
+        }
+
+        body.dark-mode #theme-toggle:hover {
+            background: linear-gradient(45deg, #0056b3, #00d4ff);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 25px 15px;
+                margin: 20px 10px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            h2 {
+                font-size: 1.6rem;
+            }
+
+            .qr-codes-grid {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            }
+
+            input, .action-button, #manual-id-input {
+                max-width: 100%;
+                padding: 12px;
+            }
+
+            #qr-reader {
+                max-width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px 10px;
+                margin: 15px;
+            }
+
+            h1 {
+                font-size: 1.6rem;
+                margin-bottom: 30px;
+            }
+
+            h2 {
+                font-size: 1.3rem;
+            }
+
+            .scanner-section, .admin-section, .qr-codes-section, .attendance-section, .employee-management {
+                padding: 20px;
+            }
+
+            th, td {
+                padding: 12px;
+                font-size: 0.85rem;
+            }
+
+            .action-button {
+                padding: 10px;
+                font-size: 0.9rem;
+            }
+
+            #qr-reader {
+                max-width: 100%;
+            }
+
+            .qr-code-item {
+                padding: 10px;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>Shaxsiy Face ID Tizimi</h1>
-    
-    <div id="setup-section">
-        <h2>1. Dastlabki Sozlash</h2>
-        <p>Iltimos, yuzingizni kameraga qarating va "Yuzimni Saqlash" tugmasini bosing.</p>
-        <div id="camera-container">
-            <video id="video" autoplay playsinline></video>
-            <canvas id="canvas"></canvas>
+    <button id="theme-toggle" onclick="toggleTheme()">🌙</button>
+    <div class="container">
+        <h1>Xodimlar Kirish Vaqtini Ro'yxatga Olish</h1>
+
+        <!-- Skanerlash Bo'limi -->
+        <div class="scanner-section">
+            <h2>QR Kodni Skanerlang yoki ID Kiriting</h2>
+            <div id="qr-reader"></div>
+            <input type="text" id="manual-id-input" placeholder="ID ni qo'lda kiriting">
+            <button class="action-button" onclick="manualCheckIn()">Qo'lda Kirish</button>
+            <div id="qr-reader-results"></div>
+            <div class="loader" id="loader"></div>
+            <div class="attendance-section">
+                <h2>Kirish Vaqtlari</h2>
+                <div class="filter-section">
+                    <input type="text" id="filter-input" placeholder="Ism bo'yicha qidirish">
+                    <button class="action-button" onclick="exportToCSV()">CSV ga Eksport</button>
+                    <button class="action-button" onclick="sendToTelegram()">Telegramga Yuborish</button>
+                </div>
+                <table id="attendance-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Ism</th>
+                            <th>Kirish Vaqti</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendance-list"></tbody>
+                </table>
+            </div>
         </div>
-        <div id="face-message"></div>
-        <button id="startButton">Kamerani Yoqish</button>
-        <button id="saveFaceButton" disabled>Yuzimni Saqlash</button>
-    </div>
-    
-    <div id="verification-section" style="display:none;">
-        <h2>2. Yuzni Tasdiqlash</h2>
-        <p>Endi siz yoki boshqa odam yuzini skaner qilishni sinab ko'rishlari mumkin.</p>
-        <div id="verification-camera-container">
-            <video id="verification-video" autoplay playsinline></video>
-            <canvas id="verification-canvas"></canvas>
+
+        <!-- Admin Bo'limi -->
+        <div class="admin-section" id="admin-section">
+            <div id="login-form" class="login-form">
+                <h2>Admin Kirish</h2>
+                <input type="password" id="admin-password" placeholder="Parolni kiriting">
+                <button class="action-button" onclick="checkAdminPassword()">Kirish</button>
+            </div>
+            <div id="qr-codes-section" class="qr-codes-section" style="display: none;">
+                <h2>Xodimlar QR Kodlari</h2>
+                <button class="action-button" id="download-all-qr">Barcha QR Kodlarni ZIP sifatida Yuklab Olish</button>
+                <button class="action-button" onclick="logoutAdmin()">Chiqish</button>
+                
+                <div class="employee-management">
+                    <h3>Xodimlarni Boshqarish</h3>
+                    <div class="employee-form">
+                        <input type="text" id="new-employee-id" placeholder="Yangi ID">
+                        <input type="text" id="new-employee-name" placeholder="Yangi xodim ismi">
+                        <button class="action-button" onclick="addEmployee()">Xodim Qo'shish</button>
+                    </div>
+                </div>
+                
+                <div class="qr-codes-grid" id="qr-codes-grid"></div>
+            </div>
         </div>
-        <div id="verification-message"></div>
-        <button id="verifyButton">Yuzni Tasdiqlash</button>
-        <button id="resetButton">Yuzni Qayta Sozlash</button>
     </div>
-    
-    <div id="results">
-        <h2>Natijalar</h2>
-        <div id="records"></div>
-    </div>
-    
+
+    <!-- Audio elementlar -->
+    <audio id="success-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3" preload="auto"></audio>
+    <audio id="error-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-fail-notification-946.mp3" preload="auto"></audio>
+
+    <!-- Kutubxonalar -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
     <script>
-        // DOM elementlari
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const startButton = document.getElementById('startButton');
-        const saveFaceButton = document.getElementById('saveFaceButton');
-        const verifyButton = document.getElementById('verifyButton');
-        const resetButton = document.getElementById('resetButton');
-        const recordsDiv = document.getElementById('records');
-        const faceMessage = document.getElementById('face-message');
-        const verificationMessage = document.getElementById('verification-message');
-        const setupSection = document.getElementById('setup-section');
-        const verificationSection = document.getElementById('verification-section');
-        const verificationVideo = document.getElementById('verification-video');
+        // Telegram bot tokeni va chat ID
+        const BOT_TOKEN = '7769875593:AAHt-AV_x9mQ8475XX_wXC3YyDEZr77WiEU';
+        const CHAT_ID = '-4829696325';
         
-        // O'zgaruvchilar
-        let faceTemplate = null;
-        let stream = null;
-        let verificationStream = null;
-        
-        // Kamerani yoqish
-        startButton.addEventListener('click', async () => {
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({
-                    video: {
-                        width: 640,
-                        height: 480,
-                        facingMode: 'user' // Old kamera
-                    },
-                    audio: false
-                });
-                
-                video.srcObject = stream;
-                startButton.disabled = true;
-                saveFaceButton.disabled = false;
-                faceMessage.textContent = "Kamera yoqildi. Yuzingizni to'g'ri qilib kameraga qarating va 'Yuzimni Saqlash' tugmasini bosing.";
-                faceMessage.className = "";
-            } catch (err) {
-                console.error("Kamerani ochishda xatolik:", err);
-                faceMessage.textContent = "Kamerani ochishda xatolik: " + err.message;
-                faceMessage.className = "error";
-            }
-        });
-        
-        // Yuzni saqlash
-        saveFaceButton.addEventListener('click', () => {
-            // Canvasga video kadrni chizamiz
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const context = canvas.getContext('2d');
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
-            // Haqiqiy loyihada bu yerda yuzni aniqlash va template yaratish bo'ladi
-            // Demo uchun biz faqat canvasdagi rasmni saqlaymiz
-            faceTemplate = canvas.toDataURL('image/jpeg', 0.8);
-            
-            faceMessage.textContent = "Yuzingiz muvaffaqiyatli saqlandi! Endi tasdiqlash bosqichiga o'tishingiz mumkin.";
-            faceMessage.className = "success";
-            
-            // Sozlash bosqichini yopamiz, tasdiqlash bosqichini ochamiz
-            setupSection.style.display = 'none';
-            verificationSection.style.display = 'block';
-            
-            // Tasdiqlash uchun yangi kamerani yoqamiz
-            initVerificationCamera();
-        });
-        
-        // Tasdiqlash kamerasini ishga tushirish
-        async function initVerificationCamera() {
-            try {
-                verificationStream = await navigator.mediaDevices.getUserMedia({
-                    video: {
-                        width: 640,
-                        height: 480,
-                        facingMode: 'user'
-                    },
-                    audio: false
-                });
-                
-                verificationVideo.srcObject = verificationStream;
-                verifyButton.disabled = false;
-                verificationMessage.textContent = "Kamera yoqildi. Yuzingizni kameraga qarating va 'Yuzni Tasdiqlash' tugmasini bosing.";
-                verificationMessage.className = "";
-            } catch (err) {
-                console.error("Tasdiqlash kamerasi ochishda xatolik:", err);
-                verificationMessage.textContent = "Kamerani ochishda xatolik: " + err.message;
-                verificationMessage.className = "error";
-            }
+        // Xodimlar ma'lumotlari
+        let employees = JSON.parse(localStorage.getItem('employees')) || [
+            { id: "001", name: "Ali Xodim" },
+            { id: "002", name: "Vali Saidov" },
+            { id: "003", name: "Nodira Axmedova" },
+            { id: "004", name: "Shaxzod Raximov" },
+            { id: "005", name: "Gulnoza Karimova" },
+            { id: "006", name: "Bekzod Tursunov" },
+            { id: "007", name: "Dildora Yuldasheva" },
+            { id: "008", name: "Jamshid Ergashev" },
+            { id: "009", name: "Malika Sobirova" },
+            { id: "010", name: "Otabek Murodov" }
+        ];
+
+        const ADMIN_PASSWORD = 'sodiq19';
+
+        // Audio elementlarni olamiz
+        const successSound = document.getElementById('success-sound');
+        const errorSound = document.getElementById('error-sound');
+
+        function playSuccessSound() {
+            successSound.volume = 0.5; // Ovoz balandligini 50% qilish
+            successSound.currentTime = 0;
+            successSound.play().catch(e => console.log('Ovozni ijro etish xatosi:', e));
         }
-        
-        // Yuzni tasdiqlash
-        verifyButton.addEventListener('click', () => {
-            const verificationCanvas = document.getElementById('verification-canvas');
-            verificationCanvas.width = verificationVideo.videoWidth;
-            verificationCanvas.height = verificationVideo.videoHeight;
-            const context = verificationCanvas.getContext('2d');
-            context.drawImage(verificationVideo, 0, 0, verificationCanvas.width, verificationCanvas.height);
+
+        function playErrorSound() {
+            errorSound.volume = 0.5; // Ovoz balandligini 50% qilish
+            errorSound.currentTime = 0;
+            errorSound.play().catch(e => console.log('Ovozni ijro etish xatosi:', e));
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        }
+
+        function startQRScanner() {
+            const html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 200 }, false);
+            const resultDiv = document.getElementById('qr-reader-results');
             
-            // Demo uchun tasodifiy natija (80% siz, 20% boshqalar)
-            const isYou = Math.random() < 0.8;
-            
-            if (isYou) {
-                verificationMessage.textContent = "Tasdiqlandi! Bu sizsiz!";
-                verificationMessage.className = "success";
-                addNewRecord("Tasdiqlandi - Foydalanuvchi");
+            html5QrcodeScanner.render(
+                (decodedText) => {
+                    processCheckIn(decodedText);
+                },
+                (error) => {
+                    console.warn(`QR skanerlash xatosi: ${error}`);
+                    resultDiv.textContent = 'QR kodni skanerlashda xato. Iltimos, qayta urinib ko‘ring.';
+                    resultDiv.className = 'error';
+                    playErrorSound();
+                }
+            ).catch(error => {
+                console.error('Skaner ishga tushmadi:', error);
+                resultDiv.textContent = 'Kamera ruxsati berilmagan yoki skaner ishga tushmadi. Iltimos, ruxsatlarni tekshiring.';
+                resultDiv.className = 'error';
+                playErrorSound();
+            });
+        }
+
+        function manualCheckIn() {
+            const manualId = document.getElementById('manual-id-input').value.trim();
+            if (manualId) {
+                processCheckIn(manualId);
+                document.getElementById('manual-id-input').value = '';
             } else {
-                verificationMessage.textContent = "Rad etildi! Bu siz emassiz!";
-                verificationMessage.className = "error";
-                addNewRecord("Rad etildi - Notanish odam");
+                showToast('Iltimos, ID kiriting.', 'error');
+                playErrorSound();
             }
-        });
-        
-        // Qayta sozlash
-        resetButton.addEventListener('click', () => {
-            // Oqimlarni to'xtatamiz
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
-            if (verificationStream) {
-                verificationStream.getTracks().forEach(track => track.stop());
-            }
-            
-            // O'zgaruvchilarni tozalaymiz
-            faceTemplate = null;
-            stream = null;
-            verificationStream = null;
-            
-            // UI ni qayta sozlaymiz
-            setupSection.style.display = 'block';
-            verificationSection.style.display = 'none';
-            startButton.disabled = false;
-            saveFaceButton.disabled = true;
-            verifyButton.disabled = true;
-            faceMessage.textContent = "";
-            verificationMessage.textContent = "";
-            
-            // Videolarni tozalaymiz
-            video.srcObject = null;
-            verificationVideo.srcObject = null;
-        });
-        
-        // Yangi yozuv qo'shish
-        function addNewRecord(status) {
-            const now = new Date();
-            const dateString = now.toLocaleDateString();
-            const timeString = now.toLocaleTimeString();
-            
-            const recordDiv = document.createElement('div');
-            recordDiv.className = 'record';
-            recordDiv.innerHTML = `
-                <div>${status}</div>
-                <div class="timestamp">${dateString} ${timeString}</div>
-            `;
-            
-            recordsDiv.insertBefore(recordDiv, recordsDiv.firstChild);
         }
+
+        function processCheckIn(id) {
+            const employee = employees.find(emp => emp.id === id);
+            const resultDiv = document.getElementById('qr-reader-results');
+            if (employee) {
+                const now = new Date();
+                const time = now.toLocaleString('uz-UZ', { hour12: false });
+
+                let attendanceRecords = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
+                const existingRecord = attendanceRecords.find(record => 
+                    record.id === employee.id && 
+                    record.time.startsWith(now.toLocaleDateString('uz-UZ'))
+                );
+                
+                if (existingRecord) {
+                    existingRecord.time = time;
+                    showToast(`ID: ${employee.id} (${employee.name}) yangilandi.`, 'success');
+                    playSuccessSound();
+                } else {
+                    attendanceRecords.push({
+                        id: employee.id,
+                        name: employee.name,
+                        time: time
+                    });
+                    showToast(`ID: ${employee.id} (${employee.name}) ro‘yxatga olindi.`, 'success');
+                    playSuccessSound();
+                }
+
+                localStorage.setItem('attendanceRecords', JSON.stringify(attendanceRecords));
+                resultDiv.textContent = `ID: ${employee.id} (${employee.name}) kirish vaqti: ${time}`;
+                resultDiv.className = 'success';
+                updateAttendanceList();
+                
+                // Telegramga xabar yuborish
+                sendCheckInToTelegram(employee.id, employee.name, time);
+            } else {
+                resultDiv.textContent = 'Noma‘lum ID yoki QR kod. Iltimos, to‘g‘ri ma‘lumot kiriting.';
+                resultDiv.className = 'error';
+                showToast('Noto‘g‘ri ID yoki QR kod.', 'error');
+                playErrorSound();
+            }
+        }
+
+        function sendCheckInToTelegram(id, name, time) {
+            const message = `✅ Yangi kirish:\nID: ${id}\nIsm: ${name}\nVaqt: ${time}`;
+            
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: CHAT_ID,
+                    text: message
+                })
+            }).catch(error => console.error('Telegram xatosi:', error));
+        }
+
+        function updateAttendanceList(filterQuery = '') {
+            const attendanceList = document.getElementById('attendance-list');
+            attendanceList.innerHTML = '';
+
+            const attendanceRecords = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
+            const filteredRecords = attendanceRecords.filter(record => 
+                record.name.toLowerCase().includes(filterQuery.toLowerCase())
+            );
+            
+            filteredRecords.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+            filteredRecords.forEach(record => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${record.id}</td>
+                    <td>${record.name}</td>
+                    <td>${record.time}</td>
+                `;
+                attendanceList.appendChild(row);
+            });
+        }
+
+        function generateQRCodes() {
+            const qrCodesGrid = document.getElementById('qr-codes-grid');
+            qrCodesGrid.innerHTML = '';
+
+            employees.forEach(employee => {
+                const qrCodeItem = document.createElement('div');
+                qrCodeItem.classList.add('qr-code-item');
+
+                const qrCodeDiv = document.createElement('div');
+                new QRCode(qrCodeDiv, {
+                    text: employee.id,
+                    width: 120,
+                    height: 120
+                });
+
+                const qrCodeInfo = document.createElement('p');
+                qrCodeInfo.textContent = `ID: ${employee.id} (${employee.name})`;
+
+                // Har bir QR kod uchun yuklab olish tugmasi
+                const downloadBtn = document.createElement('button');
+                downloadBtn.className = 'action-button download-btn';
+                downloadBtn.textContent = 'Yuklab Olish';
+                downloadBtn.onclick = () => downloadQRCode(employee.id, employee.name);
+                
+                // O'chirish tugmasi
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'action-button delete-btn';
+                deleteBtn.textContent = 'O\'chirish';
+                deleteBtn.onclick = () => deleteEmployee(employee.id);
+
+                qrCodeItem.appendChild(qrCodeDiv);
+                qrCodeItem.appendChild(qrCodeInfo);
+                qrCodeItem.appendChild(downloadBtn);
+                qrCodeItem.appendChild(deleteBtn);
+                qrCodesGrid.appendChild(qrCodeItem);
+            });
+        }
+
+        function downloadQRCode(id, name) {
+            const qrCodeDiv = document.createElement('div');
+            new QRCode(qrCodeDiv, {
+                text: id,
+                width: 200,
+                height: 200,
+                callback: () => {
+                    const canvas = qrCodeDiv.querySelector('canvas');
+                    if (canvas) {
+                        canvas.toBlob(blob => {
+                            saveAs(blob, `QRCode_${id}_${name}.png`);
+                            showToast(`QR kod ${id} yuklandi.`, 'success');
+                            playSuccessSound();
+                        });
+                    }
+                }
+            });
+        }
+
+        function downloadAllQRCodes() {
+            const loader = document.getElementById('loader');
+            loader.style.display = 'block';
+
+            const zip = new JSZip();
+            const qrPromises = employees.map(employee => {
+                const qrCodeDiv = document.createElement('div');
+                return new Promise((resolve, reject) => {
+                    new QRCode(qrCodeDiv, {
+                        text: employee.id,
+                        width: 200,
+                        height: 200,
+                        callback: () => {
+                            const canvas = qrCodeDiv.querySelector('canvas');
+                            if (canvas) {
+                                canvas.toBlob(blob => {
+                                    zip.file(`QRCode_${employee.id}_${employee.name}.png`, blob);
+                                    resolve();
+                                });
+                            } else {
+                                reject(new Error(`QR kod ${employee.id} uchun yaratilmadi`));
+                            }
+                        }
+                    });
+                });
+            });
+
+            Promise.all(qrPromises)
+                .then(() => {
+                    zip.generateAsync({ type: 'blob' }).then(content => {
+                        saveAs(content, 'Employee_QR_Codes.zip');
+                        loader.style.display = 'none';
+                        showToast('QR kodlar ZIP sifatida yuklandi.', 'success');
+                        playSuccessSound();
+                    });
+                })
+                .catch(error => {
+                    console.error('ZIP fayl yaratishda xatolik:', error);
+                    loader.style.display = 'none';
+                    showToast('QR kodlarni yuklashda xato yuz berdi.', 'error');
+                    playErrorSound();
+                });
+        }
+
+        function exportToCSV() {
+            const attendanceRecords = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
+            if (attendanceRecords.length === 0) {
+                showToast('Eksport qilish uchun ma‘lumotlar yo‘q.', 'error');
+                playErrorSound();
+                return;
+            }
+
+            const csvContent = [
+                'ID,Ism,Kirish Vaqti',
+                ...attendanceRecords.map(record => 
+                    `"${record.id}","${record.name}","${record.time}"`
+                )
+            ].join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            saveAs(blob, 'attendance_records.csv');
+            showToast('Ma‘lumotlar CSV sifatida yuklandi.', 'success');
+            playSuccessSound();
+        }
+
+        async function sendToTelegram() {
+            const attendanceRecords = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
+
+            if (attendanceRecords.length === 0) {
+                showToast('Telegramga yuborish uchun ma‘lumotlar yo‘q.', 'error');
+                playErrorSound();
+                return;
+            }
+
+            let message = '📊 Xodimlar Kirish Vaqtlari:\n\n';
+            attendanceRecords.forEach(record => {
+                message += `🆔 ID: ${record.id}\n👤 Ism: ${record.name}\n⏰ Vaqt: ${record.time}\n\n`;
+            });
+
+            try {
+                const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        chat_id: CHAT_ID, 
+                        text: message,
+                        parse_mode: 'HTML'
+                    })
+                });
+
+                const result = await response.json();
+                if (result.ok) {
+                    showToast('Ma‘lumotlar Telegramga yuborildi.', 'success');
+                    playSuccessSound();
+                } else {
+                    showToast('Telegramga yuborishda xato.', 'error');
+                    playErrorSound();
+                }
+            } catch (error) {
+                console.error('Telegram API xatosi:', error);
+                showToast('Telegramga ulanishda xato.', 'error');
+                playErrorSound();
+            }
+        }
+
+        function checkAdminPassword() {
+            const passwordInput = document.getElementById('admin-password').value;
+            const loginForm = document.getElementById('login-form');
+            const qrCodesSection = document.getElementById('qr-codes-section');
+
+            if (passwordInput === ADMIN_PASSWORD) {
+                loginForm.style.display = 'none';
+                qrCodesSection.style.display = 'block';
+                generateQRCodes();
+                showToast('Admin paneliga kirdingiz.', 'success');
+                playSuccessSound();
+            } else {
+                showToast('Noto‘g‘ri parol.', 'error');
+                playErrorSound();
+                document.getElementById('admin-password').value = '';
+            }
+        }
+
+        function logoutAdmin() {
+            const loginForm = document.getElementById('login-form');
+            const qrCodesSection = document.getElementById('qr-codes-section');
+            loginForm.style.display = 'block';
+            qrCodesSection.style.display = 'none';
+            document.getElementById('admin-password').value = '';
+            showToast('Admin panelidan chiqildi.', 'success');
+            playSuccessSound();
+        }
+
+        function addEmployee() {
+            const id = document.getElementById('new-employee-id').value.trim();
+            const name = document.getElementById('new-employee-name').value.trim();
+            
+            if (!id || !name) {
+                showToast('Iltimos, ID va ismni kiriting.', 'error');
+                playErrorSound();
+                return;
+            }
+            
+            if (employees.some(emp => emp.id === id)) {
+                showToast('Bu ID allaqachon mavjud.', 'error');
+                playErrorSound();
+                return;
+            }
+            
+            employees.push({ id, name });
+            localStorage.setItem('employees', JSON.stringify(employees));
+            
+            document.getElementById('new-employee-id').value = '';
+            document.getElementById('new-employee-name').value = '';
+            
+            generateQRCodes();
+            showToast(`Yangi xodim ${name} (${id}) qo'shildi.`, 'success');
+            playSuccessSound();
+            
+            // Telegramga xabar yuborish
+            const message = `👤 Yangi xodim qo'shildi:\nID: ${id}\nIsm: ${name}`;
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: CHAT_ID,
+                    text: message
+                })
+            }).catch(error => console.error('Telegram xatosi:', error));
+        }
+
+        function deleteEmployee(id) {
+            if (!confirm('Bu xodimni rostdan ham o\'chirmoqchimisiz?')) return;
+            
+            employees = employees.filter(emp => emp.id !== id);
+            localStorage.setItem('employees', JSON.stringify(employees));
+            
+            // Kirish vaqtlaridan ham o'chiramiz
+            let attendanceRecords = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
+            attendanceRecords = attendanceRecords.filter(record => record.id !== id);
+            localStorage.setItem('attendanceRecords', JSON.stringify(attendanceRecords));
+            
+            generateQRCodes();
+            updateAttendanceList();
+            showToast(`Xodim ${id} o'chirildi.`, 'success');
+            playSuccessSound();
+            
+            // Telegramga xabar yuborish
+            const message = `❌ Xodim o'chirildi:\nID: ${id}`;
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: CHAT_ID,
+                    text: message
+                })
+            }).catch(error => console.error('Telegram xatosi:', error));
+        }
+
+        function setupFilter() {
+            const filterInput = document.getElementById('filter-input');
+            filterInput.addEventListener('input', () => {
+                updateAttendanceList(filterInput.value);
+            });
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            const themeToggle = document.getElementById('theme-toggle');
+            themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Dastlabki xodimlarni saqlash
+            if (!localStorage.getItem('employees')) {
+                localStorage.setItem('employees', JSON.stringify(employees));
+            } else {
+                employees = JSON.parse(localStorage.getItem('employees'));
+            }
+            
+            startQRScanner();
+            updateAttendanceList();
+            setupFilter();
+            document.getElementById('download-all-qr').addEventListener('click', downloadAllQRCodes);
+            
+            // Har 5 daqiqada Telegramga ma'lumot yuborish
+            setInterval(sendToTelegram, 5 * 60 * 1000);
+        });
     </script>
 </body>
 </html>
