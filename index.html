@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Face ID Tizimi</title>
+    <title>Shaxsiy Face ID Tizimi</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -87,23 +87,44 @@
         .error {
             color: red;
         }
+        
+        #setup-section, #verification-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
-    <h1>Face ID Tizimi</h1>
+    <h1>Shaxsiy Face ID Tizimi</h1>
     
-    <div id="camera-container">
-        <video id="video" autoplay playsinline></video>
-        <canvas id="canvas"></canvas>
+    <div id="setup-section">
+        <h2>1. Dastlabki Sozlash</h2>
+        <p>Iltimos, yuzingizni kameraga qarating va "Yuzimni Saqlash" tugmasini bosing.</p>
+        <div id="camera-container">
+            <video id="video" autoplay playsinline></video>
+            <canvas id="canvas"></canvas>
+        </div>
+        <div id="face-message"></div>
+        <button id="startButton">Kamerani Yoqish</button>
+        <button id="saveFaceButton" disabled>Yuzimni Saqlash</button>
     </div>
     
-    <div id="face-message"></div>
-    
-    <button id="startButton">Kamerani Yoqish</button>
-    <button id="scanButton" disabled>Yuzni Skaner Qilish</button>
+    <div id="verification-section" style="display:none;">
+        <h2>2. Yuzni Tasdiqlash</h2>
+        <p>Endi siz yoki boshqa odam yuzini skaner qilishni sinab ko'rishlari mumkin.</p>
+        <div id="verification-camera-container">
+            <video id="verification-video" autoplay playsinline></video>
+            <canvas id="verification-canvas"></canvas>
+        </div>
+        <div id="verification-message"></div>
+        <button id="verifyButton">Yuzni Tasdiqlash</button>
+        <button id="resetButton">Yuzni Qayta Sozlash</button>
+    </div>
     
     <div id="results">
-        <h2>Ro'yxat</h2>
+        <h2>Natijalar</h2>
         <div id="records"></div>
     </div>
     
@@ -112,14 +133,25 @@
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const startButton = document.getElementById('startButton');
-        const scanButton = document.getElementById('scanButton');
+        const saveFaceButton = document.getElementById('saveFaceButton');
+        const verifyButton = document.getElementById('verifyButton');
+        const resetButton = document.getElementById('resetButton');
         const recordsDiv = document.getElementById('records');
         const faceMessage = document.getElementById('face-message');
+        const verificationMessage = document.getElementById('verification-message');
+        const setupSection = document.getElementById('setup-section');
+        const verificationSection = document.getElementById('verification-section');
+        const verificationVideo = document.getElementById('verification-video');
+        
+        // O'zgaruvchilar
+        let faceTemplate = null;
+        let stream = null;
+        let verificationStream = null;
         
         // Kamerani yoqish
         startButton.addEventListener('click', async () => {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({
+                stream = await navigator.mediaDevices.getUserMedia({
                     video: {
                         width: 640,
                         height: 480,
@@ -130,8 +162,8 @@
                 
                 video.srcObject = stream;
                 startButton.disabled = true;
-                scanButton.disabled = false;
-                faceMessage.textContent = "Kamera yoqildi. Yuzingizni kameraga qarating va 'Yuzni Skaner Qilish' tugmasini bosing.";
+                saveFaceButton.disabled = false;
+                faceMessage.textContent = "Kamera yoqildi. Yuzingizni to'g'ri qilib kameraga qarating va 'Yuzimni Saqlash' tugmasini bosing.";
                 faceMessage.className = "";
             } catch (err) {
                 console.error("Kamerani ochishda xatolik:", err);
@@ -140,42 +172,105 @@
             }
         });
         
-        // Yuzni skaner qilish
-        scanButton.addEventListener('click', () => {
+        // Yuzni saqlash
+        saveFaceButton.addEventListener('click', () => {
             // Canvasga video kadrni chizamiz
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             const context = canvas.getContext('2d');
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
             
-            // Bu yerda haqiqiy yuzni aniqlash algoritmi bo'lishi kerak
-            // Oddiy demo uchun biz faqat tasdiqlaymiz
-            simulateFaceDetection();
+            // Haqiqiy loyihada bu yerda yuzni aniqlash va template yaratish bo'ladi
+            // Demo uchun biz faqat canvasdagi rasmni saqlaymiz
+            faceTemplate = canvas.toDataURL('image/jpeg', 0.8);
+            
+            faceMessage.textContent = "Yuzingiz muvaffaqiyatli saqlandi! Endi tasdiqlash bosqichiga o'tishingiz mumkin.";
+            faceMessage.className = "success";
+            
+            // Sozlash bosqichini yopamiz, tasdiqlash bosqichini ochamiz
+            setupSection.style.display = 'none';
+            verificationSection.style.display = 'block';
+            
+            // Tasdiqlash uchun yangi kamerani yoqamiz
+            initVerificationCamera();
         });
         
-        // Demo uchun yuzni aniqlashni simulyatsiya qilish
-        function simulateFaceDetection() {
-            faceMessage.textContent = "Yuzni aniqlash jarayoni...";
-            faceMessage.className = "";
-            
-            // 2 soniya kutib turamiz (haqiqiy loyihada bu Face API chaqiruvi bo'ladi)
-            setTimeout(() => {
-                // 90% ehtimollik bilan muvaffaqiyatli deb hisoblaymiz
-                const isSuccess = Math.random() > 0.1;
+        // Tasdiqlash kamerasini ishga tushirish
+        async function initVerificationCamera() {
+            try {
+                verificationStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: 640,
+                        height: 480,
+                        facingMode: 'user'
+                    },
+                    audio: false
+                });
                 
-                if (isSuccess) {
-                    faceMessage.textContent = "Yuz muvaffaqiyatli aniqlandi!";
-                    faceMessage.className = "success";
-                    addNewRecord();
-                } else {
-                    faceMessage.textContent = "Yuz aniqlanmadi. Iltimos, yuzingizni to'g'ri qilib kameraga qarating va qayta urinib ko'ring.";
-                    faceMessage.className = "error";
-                }
-            }, 2000);
+                verificationVideo.srcObject = verificationStream;
+                verifyButton.disabled = false;
+                verificationMessage.textContent = "Kamera yoqildi. Yuzingizni kameraga qarating va 'Yuzni Tasdiqlash' tugmasini bosing.";
+                verificationMessage.className = "";
+            } catch (err) {
+                console.error("Tasdiqlash kamerasi ochishda xatolik:", err);
+                verificationMessage.textContent = "Kamerani ochishda xatolik: " + err.message;
+                verificationMessage.className = "error";
+            }
         }
         
+        // Yuzni tasdiqlash
+        verifyButton.addEventListener('click', () => {
+            const verificationCanvas = document.getElementById('verification-canvas');
+            verificationCanvas.width = verificationVideo.videoWidth;
+            verificationCanvas.height = verificationVideo.videoHeight;
+            const context = verificationCanvas.getContext('2d');
+            context.drawImage(verificationVideo, 0, 0, verificationCanvas.width, verificationCanvas.height);
+            
+            // Demo uchun tasodifiy natija (80% siz, 20% boshqalar)
+            const isYou = Math.random() < 0.8;
+            
+            if (isYou) {
+                verificationMessage.textContent = "Tasdiqlandi! Bu sizsiz!";
+                verificationMessage.className = "success";
+                addNewRecord("Tasdiqlandi - Foydalanuvchi");
+            } else {
+                verificationMessage.textContent = "Rad etildi! Bu siz emassiz!";
+                verificationMessage.className = "error";
+                addNewRecord("Rad etildi - Notanish odam");
+            }
+        });
+        
+        // Qayta sozlash
+        resetButton.addEventListener('click', () => {
+            // Oqimlarni to'xtatamiz
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+            if (verificationStream) {
+                verificationStream.getTracks().forEach(track => track.stop());
+            }
+            
+            // O'zgaruvchilarni tozalaymiz
+            faceTemplate = null;
+            stream = null;
+            verificationStream = null;
+            
+            // UI ni qayta sozlaymiz
+            setupSection.style.display = 'block';
+            verificationSection.style.display = 'none';
+            startButton.disabled = false;
+            saveFaceButton.disabled = true;
+            verifyButton.disabled = true;
+            faceMessage.textContent = "";
+            verificationMessage.textContent = "";
+            
+            // Videolarni tozalaymiz
+            video.srcObject = null;
+            verificationVideo.srcObject = null;
+        });
+        
         // Yangi yozuv qo'shish
-        function addNewRecord() {
+        function addNewRecord(status) {
             const now = new Date();
             const dateString = now.toLocaleDateString();
             const timeString = now.toLocaleTimeString();
@@ -183,7 +278,7 @@
             const recordDiv = document.createElement('div');
             recordDiv.className = 'record';
             recordDiv.innerHTML = `
-                <div>Yuz muvaffaqiyatli aniqlandi</div>
+                <div>${status}</div>
                 <div class="timestamp">${dateString} ${timeString}</div>
             `;
             
